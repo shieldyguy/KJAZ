@@ -1,6 +1,8 @@
 // player.js
 const audio = document.getElementById('audio');
 const playBtn = document.getElementById('play');
+const playIcon = playBtn.querySelector('.play-icon');
+const pauseIcon = playBtn.querySelector('.pause-icon');
 const prevBtn = document.getElementById('prev');
 const nextBtn = document.getElementById('next');
 const scrubber = document.getElementById('scrubber');
@@ -51,16 +53,25 @@ function formatTime(sec) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// Show play or pause icon
+function showPlayState(isPlaying) {
+  playIcon.style.display = isPlaying ? 'none' : 'block';
+  pauseIcon.style.display = isPlaying ? 'block' : 'none';
+}
+
 // Load and play a track
 function loadTrack(filename) {
   audio.src = `../samples/${filename}`;
   trackNameEl.textContent = cleanName(filename);
   audio.play();
-  playBtn.textContent = '❚❚';
 
   // Generate new blob for this track
   generateBlob(filename);
 }
+
+// Sync icon state with actual audio state
+audio.addEventListener('play', () => showPlayState(true));
+audio.addEventListener('pause', () => showPlayState(false));
 
 // Go to next track (shuffled)
 function nextTrack() {
@@ -90,10 +101,8 @@ function prevTrack() {
 playBtn.addEventListener('click', () => {
   if (audio.paused) {
     audio.play();
-    playBtn.textContent = '❚❚';
   } else {
     audio.pause();
-    playBtn.textContent = '▶';
   }
 });
 

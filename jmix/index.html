@@ -16,9 +16,25 @@
       <span id="duration">0:00</span>
     </div>
     <div id="controls">
-      <button id="prev">←</button>
-      <button id="play">▶</button>
-      <button id="next">→</button>
+      <button id="prev">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <polyline points="14,6 8,12 14,18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="play">
+        <svg viewBox="0 0 24 24" width="24" height="24" class="play-icon">
+          <polygon points="7,6 19,12 7,18" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg viewBox="0 0 24 24" width="24" height="24" class="pause-icon" style="display:none;">
+          <line x1="8" y1="6" x2="8" y2="18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <line x1="16" y1="6" x2="16" y2="18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button id="next">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <polyline points="10,6 16,12 10,18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
   </main>
   <audio id="audio"></audio>
