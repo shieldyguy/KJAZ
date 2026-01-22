@@ -10,29 +10,8 @@ const trackNameEl = document.getElementById('track-name');
 const currentTimeEl = document.getElementById('current');
 const durationEl = document.getElementById('duration');
 
-// Hardcoded tracklist (MVP - will be replaced with build script later)
-const tracks = [
-  'afterschool .mp3',
-  'capitan.mp3',
-  'chris kidsynth ableton demo.mp3',
-  'corner case.mp3',
-  'first jazzman wasm recordings.mp3',
-  'jazzwalter.mp3',
-  'jermsmn_shimmer.mp3',
-  'jermsmn_syncophant.mp3',
-  'jmax_challenge.mp3',
-  'jmax_feeb.mp3',
-  'jmax_punk.mp3',
-  'lizard.mp3',
-  'locked discies.mp3',
-  'paul_bad.mp3',
-  'paul_rectangles.mp3',
-  'peenguinez.mp3',
-  'talkshop.mp3',
-  'yarjzmeens.mp3',
-  'yasmeen.mp3',
-  'yazzbreeng.mp3'
-];
+// Tracklist loaded from JSON
+let tracks = [];
 
 let history = [];
 let historyIndex = -1;
@@ -190,14 +169,28 @@ window.addEventListener('hashchange', () => {
   }
 });
 
-// Start playing on load
-const urlTrack = getTrackFromURL();
-if (urlTrack) {
-  // Load the track from URL
-  history.push(urlTrack);
-  historyIndex = 0;
-  loadTrack(urlTrack);
-} else {
-  // Default random shuffle behavior
-  nextTrack();
+// Load tracklist and start playing
+async function init() {
+  try {
+    // Fetch tracklist.json
+    const response = await fetch('tracklist.json');
+    tracks = await response.json();
+
+    // Start playing
+    const urlTrack = getTrackFromURL();
+    if (urlTrack) {
+      // Load the track from URL
+      history.push(urlTrack);
+      historyIndex = 0;
+      loadTrack(urlTrack);
+    } else {
+      // Default random shuffle behavior
+      nextTrack();
+    }
+  } catch (error) {
+    console.error('Failed to load tracklist:', error);
+    trackNameEl.textContent = 'Error loading tracklist';
+  }
 }
+
+init();

@@ -1,0 +1,10 @@
+{
+  "name": "jmix",
+  "version": "1.0.0",
+  "description": "Demo Radio - minimal radio-style streaming for Jazzman samples",
+  "scripts": {
+    "build": "node build-tracklist.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
