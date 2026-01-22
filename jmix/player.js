@@ -16,6 +16,7 @@ let tracks = [];
 let history = [];
 let historyIndex = -1;
 let isScrubbing = false;
+let isUpdatingHash = false; // Flag to prevent hashchange loop
 
 // Get track filename from URL hash
 function getTrackFromURL() {
@@ -54,8 +55,10 @@ function loadTrack(filename) {
   trackNameEl.textContent = cleanName(filename);
   audio.play();
 
-  // Update URL hash for sharing
+  // Update URL hash for sharing (with flag to prevent hashchange loop)
+  isUpdatingHash = true;
   window.location.hash = filename;
+  setTimeout(() => { isUpdatingHash = false; }, 0);
 
   // Generate new blob for this track
   generateBlob(filename);
@@ -160,6 +163,9 @@ scrubber.addEventListener('touchend', () => {
 
 // Handle hash changes while on the page
 window.addEventListener('hashchange', () => {
+  // Ignore if we're programmatically updating the hash
+  if (isUpdatingHash) return;
+
   const urlTrack = getTrackFromURL();
   if (urlTrack) {
     // Add to history and play

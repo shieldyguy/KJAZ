@@ -55,8 +55,8 @@ main {
 }
 
 #controls button {
-  background: none;
-  color: #2c2c2c;
+  background: none; 
+  color: rgba(44, 44, 44, 0.4);
   border: none;
   width: 44px;
   height: 44px;
@@ -68,7 +68,7 @@ main {
 }
 
 #controls button:hover {
-  color: rgba(44, 44, 44, 0.4);
+  color: #2c2c2c;
 }
 
 #controls button svg {
@@ -76,9 +76,10 @@ main {
 }
 
 #play .play-icon polygon {
+  color: rgba(44, 44, 44, 0.4);
   transition: fill 0.2s;
 }
 
 #play:hover .play-icon polygon {
-  fill: transparent;
+  fill: #2c2c2c;
 }
