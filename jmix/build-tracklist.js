@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SAMPLES_DIR = path.join(__dirname, '../samples');
+const SAMPLES_DIR = path.join(__dirname, 'samples');
 const OUTPUT_FILE = path.join(__dirname, 'tracklist.json');
 
 function buildTracklist() {

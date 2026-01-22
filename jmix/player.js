@@ -51,7 +51,7 @@ function showPlayState(isPlaying) {
 
 // Load and play a track
 function loadTrack(filename) {
-  audio.src = `../samples/${filename}`;
+  audio.src = `./samples/${filename}`;
   trackNameEl.textContent = cleanName(filename);
   audio.play();
 
