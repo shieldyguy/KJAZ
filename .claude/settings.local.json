@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:howlerjs.com)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}
