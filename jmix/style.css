@@ -20,6 +20,8 @@ main {
   align-items: center;
   gap: 1.5rem;
   padding: 2rem;
+  /* border: 0.5px solid #2c2c2c; */
+  /* border-radius: 60px; */
 }
 
 #blob {
@@ -49,7 +51,7 @@ main {
 
 #controls {
   display: flex;
-  gap: 3rem;
+  gap: 4.6rem;
 }
 
 #controls button {

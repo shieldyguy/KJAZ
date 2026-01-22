@@ -16,8 +16,6 @@ const pastels = [
 
 let blobPoints = [];
 let blobColor = pastels[0];
-let breathePhase = 0;
-let animationId;
 
 // Seed random from string
 function seededRandom(seed) {
@@ -51,10 +49,10 @@ function generateBlob(trackName) {
     blobPoints.push({
       x: Math.cos(angle) * r,
       y: Math.sin(angle) * r,
-      baseX: Math.cos(angle) * r,
-      baseY: Math.sin(angle) * r,
     });
   }
+
+  drawBlob();
 }
 
 // Draw the blob with bezier curves
@@ -66,19 +64,10 @@ function drawBlob() {
 
   ctx.clearRect(0, 0, w, h);
 
-  // Don't draw if no blob generated yet
-  if (blobPoints.length === 0) {
-    animationId = requestAnimationFrame(drawBlob);
-    return;
-  }
-
-  // Breathing scale
-  const breathe = 1 + Math.sin(breathePhase) * 0.03;
-  breathePhase += 0.02;
+  if (blobPoints.length === 0) return;
 
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.scale(breathe, breathe);
 
   ctx.beginPath();
 
@@ -105,12 +94,7 @@ function drawBlob() {
   ctx.fill();
 
   ctx.restore();
-
-  animationId = requestAnimationFrame(drawBlob);
 }
-
-// Start animation
-drawBlob();
 
 // Expose for player.js
 window.generateBlob = generateBlob;
