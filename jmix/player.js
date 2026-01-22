@@ -38,6 +38,16 @@ let history = [];
 let historyIndex = -1;
 let isScrubbing = false;
 
+// Get track filename from URL hash
+function getTrackFromURL() {
+  const hash = window.location.hash.slice(1); // Remove '#'
+  if (!hash) return null;
+
+  // Check if this track exists in our list
+  const track = tracks.find(t => t === hash);
+  return track || null;
+}
+
 // Clean filename for display
 function cleanName(filename) {
   return filename
@@ -64,6 +74,9 @@ function loadTrack(filename) {
   audio.src = `../samples/${filename}`;
   trackNameEl.textContent = cleanName(filename);
   audio.play();
+
+  // Update URL hash for sharing
+  window.location.hash = filename;
 
   // Generate new blob for this track
   generateBlob(filename);
@@ -166,5 +179,25 @@ scrubber.addEventListener('touchend', () => {
   isScrubbing = false;
 });
 
+// Handle hash changes while on the page
+window.addEventListener('hashchange', () => {
+  const urlTrack = getTrackFromURL();
+  if (urlTrack) {
+    // Add to history and play
+    history.push(urlTrack);
+    historyIndex = history.length - 1;
+    loadTrack(urlTrack);
+  }
+});
+
 // Start playing on load
-nextTrack();
+const urlTrack = getTrackFromURL();
+if (urlTrack) {
+  // Load the track from URL
+  history.push(urlTrack);
+  historyIndex = 0;
+  loadTrack(urlTrack);
+} else {
+  // Default random shuffle behavior
+  nextTrack();
+}
