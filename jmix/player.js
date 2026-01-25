@@ -11,17 +11,42 @@ const currentTimeEl = document.getElementById('current');
 const durationEl = document.getElementById('duration');
 
 // Tracklist is pre-shuffled in tracklist.json at build time
-// Each visitor starts at a random position, then cycles through the fixed order
 let tracks = [];
 let currentIndex = 0;
 let isScrubbing = false;
-let isUpdatingHash = false;
 
-// Get track filename from URL hash
-function getTrackFromURL() {
+// Convert filename to URL slug (must match build-tracklist.js)
+function toSlug(filename) {
+  return filename
+    .replace('.mp3', '')
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+}
+
+// Find filename from slug
+function fromSlug(slug) {
+  return tracks.find(f => toSlug(f) === slug.toLowerCase());
+}
+
+// Get track from URL path (e.g., /shimmer -> shimmer.mp3)
+function getTrackFromPath() {
+  const path = decodeURIComponent(window.location.pathname).slice(1); // Remove leading /
+  if (!path) return null;
+  return fromSlug(path);
+}
+
+// Handle legacy hash URLs (e.g., /#shimmer.mp3 -> /shimmer)
+function checkLegacyHash() {
   const hash = window.location.hash.slice(1);
-  if (!hash) return null;
-  return tracks.includes(hash) ? hash : null;
+  if (hash) {
+    const filename = hash.replace('.mp3', '') + '.mp3';
+    if (tracks.includes(filename)) {
+      // Redirect to path-based URL
+      window.location.replace('/' + toSlug(filename));
+      return true;
+    }
+  }
+  return false;
 }
 
 // Clean filename for display
@@ -53,21 +78,23 @@ function playIndex(index) {
 
   currentIndex = index;
   const filename = tracks[currentIndex];
+  const slug = toSlug(filename);
 
-  audio.src = `./samples/${filename}`;
+  audio.src = `/samples/${filename}`;
   trackNameEl.textContent = cleanName(filename);
   audio.play();
 
-  // Update URL hash for sharing
-  isUpdatingHash = true;
-  window.location.hash = filename;
-  setTimeout(() => { isUpdatingHash = false; }, 0);
+  // Update URL for sharing (without page reload)
+  const newPath = '/' + slug;
+  if (window.location.pathname !== newPath) {
+    history.pushState({ index }, cleanName(filename) + ' · KJAZ', newPath);
+  }
 
   // Generate new blob for this track
   generateBlob(filename);
 }
 
-// Navigation: just move through the pre-shuffled list
+// Navigation: cycle through the pre-shuffled list
 function nextTrack() {
   playIndex(currentIndex + 1);
 }
@@ -128,15 +155,17 @@ scrubber.addEventListener('change', () => {
 scrubber.addEventListener('mouseup', () => { isScrubbing = false; });
 scrubber.addEventListener('touchend', () => { isScrubbing = false; });
 
-// Handle hash changes (e.g., user pastes a shared link while on page)
-window.addEventListener('hashchange', () => {
-  if (isUpdatingHash) return;
-
-  const urlTrack = getTrackFromURL();
-  if (urlTrack) {
-    const index = tracks.indexOf(urlTrack);
-    if (index !== -1) {
-      playIndex(index);
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+  const filename = getTrackFromPath();
+  if (filename) {
+    const index = tracks.indexOf(filename);
+    if (index !== -1 && index !== currentIndex) {
+      currentIndex = index;
+      audio.src = `/samples/${filename}`;
+      trackNameEl.textContent = cleanName(filename);
+      audio.play();
+      generateBlob(filename);
     }
   }
 });
@@ -144,16 +173,19 @@ window.addEventListener('hashchange', () => {
 // Load tracklist and start playing
 async function init() {
   try {
-    const response = await fetch('tracklist.json');
+    const response = await fetch('/tracklist.json');
     tracks = await response.json();
 
-    const urlTrack = getTrackFromURL();
+    // Check for legacy hash URLs first
+    if (checkLegacyHash()) return;
+
+    // Try to get track from path
+    const urlTrack = getTrackFromPath();
     if (urlTrack) {
-      // Start at the shared track's position in the sequence
       const index = tracks.indexOf(urlTrack);
       playIndex(index !== -1 ? index : 0);
     } else {
-      // Random starting position for new visitors
+      // Random starting position for new visitors at root
       const startIndex = Math.floor(Math.random() * tracks.length);
       playIndex(startIndex);
     }

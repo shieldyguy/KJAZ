@@ -5,6 +5,9 @@
   "scripts": {
     "build": "node build-tracklist.js"
   },
+  "dependencies": {
+    "canvas": "^2.11.2"
+  },
   "author": "",
   "license": "ISC"
 }
