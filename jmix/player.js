@@ -10,22 +10,18 @@ const trackNameEl = document.getElementById('track-name');
 const currentTimeEl = document.getElementById('current');
 const durationEl = document.getElementById('duration');
 
-// Tracklist loaded from JSON
+// Tracklist is pre-shuffled in tracklist.json at build time
+// Each visitor starts at a random position, then cycles through the fixed order
 let tracks = [];
-
-let history = [];
-let historyIndex = -1;
+let currentIndex = 0;
 let isScrubbing = false;
-let isUpdatingHash = false; // Flag to prevent hashchange loop
+let isUpdatingHash = false;
 
 // Get track filename from URL hash
 function getTrackFromURL() {
-  const hash = window.location.hash.slice(1); // Remove '#'
+  const hash = window.location.hash.slice(1);
   if (!hash) return null;
-
-  // Check if this track exists in our list
-  const track = tracks.find(t => t === hash);
-  return track || null;
+  return tracks.includes(hash) ? hash : null;
 }
 
 // Clean filename for display
@@ -49,13 +45,20 @@ function showPlayState(isPlaying) {
   pauseIcon.style.display = isPlaying ? 'block' : 'none';
 }
 
-// Load and play a track
-function loadTrack(filename) {
+// Load and play a track by index
+function playIndex(index) {
+  // Wrap around
+  if (index < 0) index = tracks.length - 1;
+  if (index >= tracks.length) index = 0;
+
+  currentIndex = index;
+  const filename = tracks[currentIndex];
+
   audio.src = `./samples/${filename}`;
   trackNameEl.textContent = cleanName(filename);
   audio.play();
 
-  // Update URL hash for sharing (with flag to prevent hashchange loop)
+  // Update URL hash for sharing
   isUpdatingHash = true;
   window.location.hash = filename;
   setTimeout(() => { isUpdatingHash = false; }, 0);
@@ -64,33 +67,18 @@ function loadTrack(filename) {
   generateBlob(filename);
 }
 
+// Navigation: just move through the pre-shuffled list
+function nextTrack() {
+  playIndex(currentIndex + 1);
+}
+
+function prevTrack() {
+  playIndex(currentIndex - 1);
+}
+
 // Sync icon state with actual audio state
 audio.addEventListener('play', () => showPlayState(true));
 audio.addEventListener('pause', () => showPlayState(false));
-
-// Go to next track (shuffled)
-function nextTrack() {
-  if (historyIndex < history.length - 1) {
-    historyIndex++;
-    loadTrack(history[historyIndex]);
-    return;
-  }
-
-  const available = tracks.filter(t => t !== history[history.length - 1]);
-  const pick = available[Math.floor(Math.random() * available.length)] || tracks[0];
-
-  history.push(pick);
-  historyIndex = history.length - 1;
-  loadTrack(pick);
-}
-
-// Go to previous track
-function prevTrack() {
-  if (historyIndex > 0) {
-    historyIndex--;
-    loadTrack(history[historyIndex]);
-  }
-}
 
 // Play/pause
 playBtn.addEventListener('click', () => {
@@ -114,84 +102,60 @@ audio.addEventListener('timeupdate', () => {
 
 audio.addEventListener('loadedmetadata', () => {
   durationEl.textContent = formatTime(audio.duration);
-  console.log('Metadata loaded, duration:', audio.duration);
 });
 
 audio.addEventListener('ended', nextTrack);
 
 // Scrubber interaction
-scrubber.addEventListener('mousedown', () => {
-  isScrubbing = true;
-  console.log('Scrub START');
-});
-
-scrubber.addEventListener('touchstart', () => {
-  isScrubbing = true;
-  console.log('Scrub START (touch)');
-});
+scrubber.addEventListener('mousedown', () => { isScrubbing = true; });
+scrubber.addEventListener('touchstart', () => { isScrubbing = true; });
 
 scrubber.addEventListener('input', () => {
-  // Preview the time while dragging
   const seekPercent = scrubber.value / 100;
   const seekTime = seekPercent * audio.duration;
   currentTimeEl.textContent = formatTime(seekTime);
-  console.log('Scrubbing to:', seekPercent * 100 + '%', 'seekTime:', seekTime);
 });
 
 scrubber.addEventListener('change', () => {
-  // Actually perform the seek when user releases
   const seekPercent = scrubber.value / 100;
   const seekTime = seekPercent * audio.duration;
-
-  console.log('Scrub END - attempting seek to:', seekTime, 'duration:', audio.duration, 'seekable:', audio.seekable.length > 0 ? audio.seekable.start(0) + '-' + audio.seekable.end(0) : 'none');
-
   if (!isNaN(seekTime) && isFinite(seekTime)) {
     audio.currentTime = seekTime;
-    console.log('Set currentTime to:', audio.currentTime);
   }
-
   isScrubbing = false;
 });
 
-scrubber.addEventListener('mouseup', () => {
-  isScrubbing = false;
-});
+scrubber.addEventListener('mouseup', () => { isScrubbing = false; });
+scrubber.addEventListener('touchend', () => { isScrubbing = false; });
 
-scrubber.addEventListener('touchend', () => {
-  isScrubbing = false;
-});
-
-// Handle hash changes while on the page
+// Handle hash changes (e.g., user pastes a shared link while on page)
 window.addEventListener('hashchange', () => {
-  // Ignore if we're programmatically updating the hash
   if (isUpdatingHash) return;
 
   const urlTrack = getTrackFromURL();
   if (urlTrack) {
-    // Add to history and play
-    history.push(urlTrack);
-    historyIndex = history.length - 1;
-    loadTrack(urlTrack);
+    const index = tracks.indexOf(urlTrack);
+    if (index !== -1) {
+      playIndex(index);
+    }
   }
 });
 
 // Load tracklist and start playing
 async function init() {
   try {
-    // Fetch tracklist.json
     const response = await fetch('tracklist.json');
     tracks = await response.json();
 
-    // Start playing
     const urlTrack = getTrackFromURL();
     if (urlTrack) {
-      // Load the track from URL
-      history.push(urlTrack);
-      historyIndex = 0;
-      loadTrack(urlTrack);
+      // Start at the shared track's position in the sequence
+      const index = tracks.indexOf(urlTrack);
+      playIndex(index !== -1 ? index : 0);
     } else {
-      // Default random shuffle behavior
-      nextTrack();
+      // Random starting position for new visitors
+      const startIndex = Math.floor(Math.random() * tracks.length);
+      playIndex(startIndex);
     }
   } catch (error) {
     console.error('Failed to load tracklist:', error);
