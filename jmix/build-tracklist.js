@@ -312,7 +312,32 @@ async function build() {
     console.log(`✓ ${filename} → /${slug}/${newOG ? ' (new OG)' : ''}`);
   }
 
-  // 5. Update .gitignore with generated directories
+  // 5. Clean up deleted tracks (remove orphaned folders and OG images)
+  const currentSlugs = new Set(slugs);
+
+  // Remove orphaned OG images
+  if (fs.existsSync(OG_DIR)) {
+    for (const file of fs.readdirSync(OG_DIR)) {
+      const slug = file.replace('.png', '');
+      if (!currentSlugs.has(slug)) {
+        fs.unlinkSync(path.join(OG_DIR, file));
+        console.log(`🗑 Removed og/${file} (track deleted)`);
+      }
+    }
+  }
+
+  // Remove orphaned track directories
+  for (const entry of fs.readdirSync(__dirname)) {
+    const entryPath = path.join(__dirname, entry);
+    if (fs.statSync(entryPath).isDirectory() &&
+        fs.existsSync(path.join(entryPath, 'index.html')) &&
+        !currentSlugs.has(entry)) {
+      fs.rmSync(entryPath, { recursive: true });
+      console.log(`🗑 Removed /${entry}/ (track deleted)`);
+    }
+  }
+
+  // 6. Update .gitignore with generated directories
   const gitignorePath = path.join(__dirname, '.gitignore');
   const marker = '# Generated track pages (auto-updated by build)';
   let gitignore = '';
