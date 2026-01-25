@@ -253,13 +253,30 @@ async function build() {
 
   console.log(`Found ${mp3Files.length} tracks`);
 
-  // 2. Shuffle and write tracklist.json
-  const shuffled = shuffle(mp3Files);
-  fs.writeFileSync(
-    path.join(__dirname, 'tracklist.json'),
-    JSON.stringify(shuffled, null, 2)
-  );
-  console.log('✓ Generated tracklist.json (shuffled)');
+  // 2. Load existing tracklist (if any) and check if tracks changed
+  const tracklistPath = path.join(__dirname, 'tracklist.json');
+  let existingTracks = [];
+  try {
+    existingTracks = JSON.parse(fs.readFileSync(tracklistPath, 'utf-8'));
+  } catch (e) {
+    // No existing tracklist
+  }
+
+  // Check if the set of tracks changed (ignore order)
+  const existingSet = new Set(existingTracks);
+  const currentSet = new Set(mp3Files);
+  const tracksChanged = mp3Files.length !== existingTracks.length ||
+    mp3Files.some(f => !existingSet.has(f)) ||
+    existingTracks.some(f => !currentSet.has(f));
+
+  if (tracksChanged) {
+    // Tracks added or removed - create new shuffled list
+    const shuffled = shuffle(mp3Files);
+    fs.writeFileSync(tracklistPath, JSON.stringify(shuffled, null, 2));
+    console.log('✓ Generated tracklist.json (shuffled - tracks changed)');
+  } else {
+    console.log('✓ tracklist.json unchanged (same tracks)');
+  }
 
   // 3. Create OG directory (if canvas available)
   if (createCanvas && !fs.existsSync(OG_DIR)) {
@@ -272,15 +289,19 @@ async function build() {
     const slug = toSlug(filename);
     slugs.push(slug);
 
-    // OG image (only if canvas available)
-    if (createCanvas) {
+    const ogPath = path.join(OG_DIR, `${slug}.png`);
+    let newOG = false;
+
+    // OG image (only if canvas available and image doesn't exist)
+    if (createCanvas && !fs.existsSync(ogPath)) {
       const ogBuffer = generateOGImage(filename);
       if (ogBuffer) {
-        fs.writeFileSync(path.join(OG_DIR, `${slug}.png`), ogBuffer);
+        fs.writeFileSync(ogPath, ogBuffer);
+        newOG = true;
       }
     }
 
-    // Track HTML page
+    // Track HTML page (always regenerate - it's fast)
     const trackDir = path.join(__dirname, slug);
     if (!fs.existsSync(trackDir)) {
       fs.mkdirSync(trackDir, { recursive: true });
@@ -288,7 +309,7 @@ async function build() {
     const html = generateTrackHTML(filename, slug);
     fs.writeFileSync(path.join(trackDir, 'index.html'), html);
 
-    console.log(`✓ ${filename} → /${slug}/`);
+    console.log(`✓ ${filename} → /${slug}/${newOG ? ' (new OG)' : ''}`);
   }
 
   // 5. Update .gitignore with generated directories
