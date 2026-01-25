@@ -1,10 +1,18 @@
 #!/usr/bin/env node
 // build-tracklist.js
-// Generates: tracklist.json, OG images, and per-track HTML pages
+// Generates: tracklist.json, OG images (if canvas available), and per-track HTML pages
 
 const fs = require('fs');
 const path = require('path');
-const { createCanvas } = require('canvas');
+
+// Canvas is optional - OG images are committed to git
+let createCanvas = null;
+try {
+  createCanvas = require('canvas').createCanvas;
+} catch (e) {
+  console.log('⚠ Canvas not available - skipping OG image generation');
+  console.log('  (OG images should already exist in /og/ from local build)\n');
+}
 
 const SAMPLES_DIR = path.join(__dirname, 'samples');
 const OG_DIR = path.join(__dirname, 'og');
@@ -127,6 +135,8 @@ function getBlobOffset(points) {
 
 // Generate OG image for a track (1200x630)
 function generateOGImage(filename) {
+  if (!createCanvas) return null;
+
   const width = 1200;
   const height = 630;
   const canvas = createCanvas(width, height);
@@ -140,7 +150,6 @@ function generateOGImage(filename) {
   const { points, color } = generateBlobData(filename);
   const offset = getBlobOffset(points);
   const scale = 2.5;
-  // Subtract the scaled offset to visually center the blob
   const cx = width / 2 - offset.x * scale;
   const cy = height / 2 - 30 - offset.y * scale;
   drawBlob(ctx, points, color, cx, cy, scale);
@@ -252,8 +261,8 @@ async function build() {
   );
   console.log('✓ Generated tracklist.json (shuffled)');
 
-  // 3. Create OG directory
-  if (!fs.existsSync(OG_DIR)) {
+  // 3. Create OG directory (if canvas available)
+  if (createCanvas && !fs.existsSync(OG_DIR)) {
     fs.mkdirSync(OG_DIR, { recursive: true });
   }
 
@@ -263,9 +272,13 @@ async function build() {
     const slug = toSlug(filename);
     slugs.push(slug);
 
-    // OG image
-    const ogBuffer = generateOGImage(filename);
-    fs.writeFileSync(path.join(OG_DIR, `${slug}.png`), ogBuffer);
+    // OG image (only if canvas available)
+    if (createCanvas) {
+      const ogBuffer = generateOGImage(filename);
+      if (ogBuffer) {
+        fs.writeFileSync(path.join(OG_DIR, `${slug}.png`), ogBuffer);
+      }
+    }
 
     // Track HTML page
     const trackDir = path.join(__dirname, slug);

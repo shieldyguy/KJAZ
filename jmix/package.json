@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node build-tracklist.js"
   },
-  "dependencies": {
+  "optionalDependencies": {
     "canvas": "^2.11.2"
   },
   "author": "",

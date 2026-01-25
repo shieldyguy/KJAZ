@@ -1,7 +1,9 @@
-# Generated at build time by Vercel
+# Generated at build time
 tracklist.json
-/og/
 node_modules/
+
+# OG images are committed (canvas doesn't work on Vercel)
+# Run `npm run build` locally when adding new tracks
 
 # Generated track pages (auto-updated by build)
 /afterschool/
