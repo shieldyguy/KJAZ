@@ -56,6 +56,46 @@ function cleanName(filename) {
     .replace(/[-_]/g, ' ');
 }
 
+// Update OG meta tags for current track (fixes iOS share preview caching)
+function updateOGTags(filename) {
+  const slug = toSlug(filename);
+  const displayName = cleanName(filename);
+  const baseUrl = 'https://kjaz.app';
+
+  // Update og:title
+  let ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) {
+    ogTitle.setAttribute('content', `${displayName} · KJAZ`);
+  }
+
+  // Update og:image
+  let ogImage = document.querySelector('meta[property="og:image"]');
+  if (ogImage) {
+    ogImage.setAttribute('content', `${baseUrl}/og/${slug}.png`);
+  }
+
+  // Update og:url
+  let ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) {
+    ogUrl.setAttribute('content', `${baseUrl}/${slug}`);
+  }
+
+  // Update twitter:title
+  let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+  if (twitterTitle) {
+    twitterTitle.setAttribute('content', `${displayName} · KJAZ`);
+  }
+
+  // Update twitter:image
+  let twitterImage = document.querySelector('meta[name="twitter:image"]');
+  if (twitterImage) {
+    twitterImage.setAttribute('content', `${baseUrl}/og/${slug}.png`);
+  }
+
+  // Update document title
+  document.title = `${displayName} · KJAZ`;
+}
+
 // Format seconds as m:ss
 function formatTime(sec) {
   if (isNaN(sec)) return '0:00';
@@ -92,6 +132,9 @@ function playIndex(index) {
 
   // Generate new blob for this track
   generateBlob(filename);
+
+  // Update OG tags for share preview
+  updateOGTags(filename);
 }
 
 // Navigation: cycle through the pre-shuffled list
@@ -166,6 +209,7 @@ window.addEventListener('popstate', (e) => {
       trackNameEl.textContent = cleanName(filename);
       audio.play();
       generateBlob(filename);
+      updateOGTags(filename);
     }
   }
 });
