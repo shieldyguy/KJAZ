@@ -4,6 +4,9 @@
   "outputDirectory": "jmix",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/:slug/loop", "destination": "/:slug" }
+  ],
   "headers": [
     {
       "source": "/samples/(.*)",

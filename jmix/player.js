@@ -14,6 +14,7 @@ const durationEl = document.getElementById('duration');
 let tracks = [];
 let currentIndex = 0;
 let isScrubbing = false;
+let loopMode = false;
 
 // Convert filename to URL slug (must match build-tracklist.js)
 function toSlug(filename) {
@@ -30,8 +31,15 @@ function fromSlug(slug) {
 
 // Get track from URL path (e.g., /shimmer -> shimmer.mp3)
 function getTrackFromPath() {
-  const path = decodeURIComponent(window.location.pathname).slice(1); // Remove leading /
+  let path = decodeURIComponent(window.location.pathname).slice(1); // Remove leading /
   if (!path) return null;
+
+  // Detect /track/loop URLs
+  if (path.endsWith('/loop')) {
+    loopMode = true;
+    path = path.slice(0, -5); // strip "/loop"
+  }
+
   return fromSlug(path);
 }
 
@@ -121,11 +129,12 @@ function playIndex(index) {
   const slug = toSlug(filename);
 
   audio.src = `/samples/${filename}`;
+  audio.loop = loopMode;
   trackNameEl.textContent = cleanName(filename);
   audio.play();
 
   // Update URL for sharing (without page reload)
-  const newPath = '/' + slug;
+  const newPath = '/' + slug + (loopMode ? '/loop' : '');
   if (window.location.pathname !== newPath) {
     history.pushState({ index }, cleanName(filename) + ' · KJAZ', newPath);
   }
